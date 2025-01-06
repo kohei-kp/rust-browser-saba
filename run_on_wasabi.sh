@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+# https://github.com/d0iasm/sababook/issues/2
+export DISPLAY=0
+
 HOME_PATH=$PWD
 TARGET_PATH=$PWD"/build"
 OS_PATH=$TARGET_PATH"/wasabi"
