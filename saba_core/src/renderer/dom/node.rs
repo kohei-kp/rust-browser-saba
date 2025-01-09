@@ -4,6 +4,8 @@ use alloc::rc::{Rc, Weak};
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
+use core::fmt::Display;
+use core::fmt::Formatter;
 use core::str::FromStr;
 
 #[derive(Debug, Clone)]
@@ -70,6 +72,23 @@ impl FromStr for ElementKind {
     }
 }
 
+impl Display for ElementKind {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
+        let s = match self {
+            ElementKind::Html => "html",
+            ElementKind::Head => "head",
+            ElementKind::Style => "style",
+            ElementKind::Script => "script",
+            ElementKind::Body => "body",
+            ElementKind::H1 => "h1",
+            ElementKind::H2 => "h2",
+            ElementKind::P => "p",
+            ElementKind::A => "a",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 /// https://dom.spec.whatwg.org/multipage/nav-history-apis.html#window
 #[derive(Debug, Clone)]
 pub struct Window {
@@ -113,6 +132,17 @@ impl Element {
 
     pub fn kind(&self) -> ElementKind {
         self.kind
+    }
+
+    pub fn is_block_element(&self) -> bool {
+        match self.kind {
+            ElementKind::Body | ElementKind::H1 | ElementKind::H2 | ElementKind::P => true,
+            _ => false,
+        }
+    }
+
+    pub fn attributes(&self) -> Vec<Attribute> {
+        self.attributes.clone()
     }
 }
 

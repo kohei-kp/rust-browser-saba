@@ -125,8 +125,6 @@ impl CssParser {
                 }
             }
         }
-
-        todo!()
     }
 
     fn consume_quarified_rule(&mut self) -> Option<QualifiedRule> {
