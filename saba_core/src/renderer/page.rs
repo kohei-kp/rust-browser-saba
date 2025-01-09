@@ -41,7 +41,7 @@ impl Page {
         self.browser = browser;
     }
 
-    pub fn receive_response(&mut self, response: HttpResponse) -> String {
+    pub fn receive_response(&mut self, response: HttpResponse) {
         self.create_frame(response.body());
 
         self.set_layout_view();
@@ -68,7 +68,7 @@ impl Page {
             None => return,
         };
 
-        let style = match &self.style.clone() {
+        let style = match self.style.clone() {
             Some(style) => style,
             None => return,
         };
