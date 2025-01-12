@@ -2,12 +2,20 @@ use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 
+static RESERVED_WORDS: [&str; 1] = ["var"];
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
     /// https://262.ecma-international.org/#sec-punctuators
     Punctuator(char),
     /// https://262.ecma-international.org/#sec-literals-numeric-literals
     Number(u64),
+    /// https://262.ecma-international.org/#sec-indetifier-names
+    Identifier(String),
+    /// https://262.ecma-international.org/#sec-keywords-and-reserverd-words
+    Keyword(String),
+    /// https://262.ecma-international.org/#sec-literals-string-literals
+    StringLiteral(String),
 }
 
 pub struct JsLexer {
@@ -44,6 +52,65 @@ impl JsLexer {
 
         num
     }
+
+    fn contains(&self, keyword: &str) -> bool {
+        for i in 0..keyword.len() {
+            if keyword
+                .chars()
+                .nth(i)
+                .expect("failed to access to i-th char")
+                != self.input[self.pos + i]
+            {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn check_reserved_word(&self) -> Option<String> {
+        for word in RESERVED_WORDS {
+            if self.contains(word) {
+                return Some(word.to_string());
+            }
+        }
+
+        None
+    }
+
+    fn consume_indentifier(&mut self) -> String {
+        let mut result = String::new();
+
+        loop {
+            if self.pos >= self.input.len() {
+                return result;
+            }
+            if self.input[self.pos].is_ascii_alphabetic() || self.input[self.pos] == '$' {
+                result.push(self.input[self.pos]);
+                self.pos += 1;
+            } else {
+                return result;
+            }
+        }
+    }
+
+    fn consume_string(&mut self) -> String {
+        let mut result = String::new();
+        self.pos += 1;
+
+        loop {
+            if self.pos >= self.input.len() {
+                return result;
+            }
+
+            if self.input[self.pos] == '"' {
+                self.pos += 1;
+                return result;
+            }
+
+            result.push(self.input[self.pos]);
+            self.pos += 1;
+        }
+    }
 }
 
 impl Iterator for JsLexer {
@@ -63,6 +130,13 @@ impl Iterator for JsLexer {
             }
         }
 
+        // 予約語が現れたら、Keywordトークンを返す
+        if let Some(keyword) = self.check_reserved_word() {
+            self.pos += keyword.len();
+            let token = Some(Token::Keyword(keyword));
+            return token;
+        }
+
         let c = self.input[self.pos];
 
         let token = match c {
@@ -72,6 +146,8 @@ impl Iterator for JsLexer {
                 t
             }
             '0'..='9' => Token::Number(self.cunsume_number()),
+            'a'..='z' | 'A'..='Z' | '_' | '$' => Token::Identifier(self.consume_indentifier()),
+            '"' => Token::StringLiteral(self.consume_string()),
             _ => unimplemented!("char {:?} is not supported yet", c),
         };
 
@@ -108,6 +184,53 @@ mod tests {
         let input = "1 + 2".to_string();
         let mut lexer = JsLexer::new(input).peekable();
         let expected = [Token::Number(1), Token::Punctuator('+'), Token::Number(2)].to_vec();
+        let mut i = 0;
+        while lexer.peek().is_some() {
+            assert_eq!(Some(expected[i].clone()), lexer.next());
+            i += 1;
+        }
+        assert!(lexer.peek().is_none());
+    }
+
+    #[test]
+    fn test_assign_variable() {
+        let input = "var foo=\"bar\";".to_string();
+        let mut lexer = JsLexer::new(input).peekable();
+        let expected = [
+            Token::Keyword("var".to_string()),
+            Token::Identifier("foo".to_string()),
+            Token::Punctuator('='),
+            Token::StringLiteral("bar".to_string()),
+            Token::Punctuator(';'),
+        ]
+        .to_vec();
+        let mut i = 0;
+        while lexer.peek().is_some() {
+            assert_eq!(Some(expected[i].clone()), lexer.next());
+            i += 1;
+        }
+        assert!(lexer.peek().is_none());
+    }
+
+    #[test]
+    fn test_variable_and_num() {
+        let input = "var foo=42; var result=foo+1".to_string();
+        let mut lexer = JsLexer::new(input).peekable();
+        let expected = [
+            Token::Keyword("var".to_string()),
+            Token::Identifier("foo".to_string()),
+            Token::Punctuator('='),
+            Token::Number(42),
+            Token::Punctuator(';'),
+            Token::Keyword("var".to_string()),
+            Token::Identifier("result".to_string()),
+            Token::Punctuator('='),
+            Token::Identifier("foo".to_string()),
+            Token::Punctuator('+'),
+            Token::Number(1),
+            Token::Punctuator(';'),
+        ]
+        .to_vec();
         let mut i = 0;
         while lexer.peek().is_some() {
             assert_eq!(Some(expected[i].clone()), lexer.next());
