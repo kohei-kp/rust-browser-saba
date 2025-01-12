@@ -30,7 +30,7 @@ pub enum Node {
         id: Option<Rc<Node>>,
         init: Option<Rc<Node>>,
     },
-    Identifer(String),
+    Identifier(String),
     StringLiteral(String),
 }
 
@@ -86,7 +86,7 @@ impl Node {
     }
 
     pub fn new_identifer(name: String) -> Option<Rc<Self>> {
-        Some(Rc::new(Node::Identifer(name)))
+        Some(Rc::new(Node::Identifier(name)))
     }
 
     pub fn new_string_literal(value: String) -> Option<Rc<Self>> {
@@ -334,7 +334,7 @@ mod tests {
         let mut body = Vec::new();
         body.push(Rc::new(Node::VariableDeclaration {
             declarations: [Some(Rc::new(Node::VariableDeclarator {
-                id: Some(Rc::new(Node::Identifer("foo".to_string()))),
+                id: Some(Rc::new(Node::Identifier("foo".to_string()))),
                 init: Some(Rc::new(Node::StringLiteral("bar".to_string()))),
             }))]
             .to_vec(),
@@ -352,17 +352,17 @@ mod tests {
         let mut body = Vec::new();
         body.push(Rc::new(Node::VariableDeclaration {
             declarations: [Some(Rc::new(Node::VariableDeclarator {
-                id: Some(Rc::new(Node::Identifer("foo".to_string()))),
+                id: Some(Rc::new(Node::Identifier("foo".to_string()))),
                 init: Some(Rc::new(Node::NumericLiteral(42))),
             }))]
             .to_vec(),
         }));
         body.push(Rc::new(Node::VariableDeclaration {
             declarations: [Some(Rc::new(Node::VariableDeclarator {
-                id: Some(Rc::new(Node::Identifer("result".to_string()))),
+                id: Some(Rc::new(Node::Identifier("result".to_string()))),
                 init: Some(Rc::new(Node::AdditiveExpression {
                     operator: '+',
-                    left: Some(Rc::new(Node::Identifer("foo".to_string()))),
+                    left: Some(Rc::new(Node::Identifier("foo".to_string()))),
                     right: Some(Rc::new(Node::NumericLiteral(1))),
                 })),
             }))]
